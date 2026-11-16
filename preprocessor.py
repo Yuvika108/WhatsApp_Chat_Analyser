@@ -2,33 +2,31 @@ import re
 import pandas as pd  # pyright: ignore[reportMissingModuleSource]
 
 def preprocess(data):
-    pattern = r'\d{1,2}/\d{1,2}/\d{2,4},\s\d{1,2}:\d{2}\s-\s'
+    pattern = r'\d{1,2}/\d{1,2}/\d{2,4},\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?\s*-\s'
 
-    messages = re.split(pattern, data)[1:]
-    dates = re.findall(pattern, data)
+    data = data.replace('\u202f', ' ').replace('\xa0', ' ')
 
-    df = pd.DataFrame({'user_message': messages, 'message_date': dates})
-    # convert message_date type
-    # Strip trailing ' - ' that WhatsApp appends, then parse the clean date string
-    # Use %y for 2-digit years (e.g. 25 → 2025); falls back to %Y for 4-digit
-    print(df['message_date'].dtype)
-    print(df['message_date'].head())
-    print(df['message_date'].apply(type).value_counts())
+    messages = re.split(pattern, data, flags=re.IGNORECASE)[1:]
+    dates = re.findall(pattern, data, flags=re.IGNORECASE)
 
-    df['message_date'] = df['message_date'].astype(str).str.strip()
+    df = pd.DataFrame({
+        'user_message': messages,
+        'message_date': dates
+    })
+
+    df['message_date'] = (
+        df['message_date']
+        .str.replace(r'\s*-\s*$', '', regex=True)
+        .str.strip()
+    )
 
     df['message_date'] = pd.to_datetime(
         df['message_date'],
-            format='mixed',
-            dayfirst=True,  # Interpret ambiguous dates as day-first
-            errors='coerce'  # Invalid parsing will result in NaT
-        )
-    if df['message_date'].isnull().any():
-        raise ValueError(
-            "Some msgs date couldn't be parsed."
-            "Please check your WhatsApp export format"
-        )
-
+        format='mixed',
+        dayfirst=True,
+        errors='coerce'
+    )
+    
     df.rename(columns={'message_date': 'date'}, inplace=True)
 
     users = []
