@@ -1,5 +1,5 @@
 import re
-import pandas as pd
+import pandas as pd  # pyright: ignore[reportMissingModuleSource]
 
 def preprocess(data):
     pattern = r'\d{1,2}/\d{1,2}/\d{2,4},\s\d{1,2}:\d{2}\s-\s'
@@ -11,7 +11,11 @@ def preprocess(data):
     # convert message_date type
     # Strip trailing ' - ' that WhatsApp appends, then parse the clean date string
     # Use %y for 2-digit years (e.g. 25 → 2025); falls back to %Y for 4-digit
-    df['message_date'] = df['message_date'].str.strip().str.rstrip('-').str.strip()
+    print(df['message_date'].dtype)
+    print(df['message_date'].head())
+    print(df['message_date'].apply(type).value_counts())
+
+    df['message_date'] = df['message_date'].apply(lambda x: str(x).strip().rstrip('-').strip())
     try:
         df['message_date'] = pd.to_datetime(df['message_date'], format='%d/%m/%y, %H:%M')
     except Exception:
