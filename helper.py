@@ -38,31 +38,39 @@ def most_busy_users(df):
     percent_df.columns = ['name', 'percent']
     return x, percent_df
 
-def create_wordcloud(selected_user,df):
 
+def create_wordcloud(selected_user, df):
     _dir = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(_dir, 'stop_hinglish.txt'), 'r') as f:
-        stop_words = set(f.read().splitlines())
+    stop_words_path = os.path.join(_dir, 'stop_hinglish.txt')
+
+    with open(stop_words_path, 'r', encoding='utf-8') as f:
+        stop_words = set(f.read().split())
 
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
-    temp = df[df['user'] != 'group_notification']
-    temp = temp[temp['message'] != '<Media omitted>\n']
+    temp = df[df['user'] != 'group_notification'].copy()
+
+    # Remove media messages regardless of trailing whitespace
+    temp = temp[
+        temp['message'].astype(str).str.strip() != '<Media omitted>'
+    ]
+
+    # Handle chats with no usable text
+    if temp.empty:
+        return None
 
     def remove_stop_words(message):
-        y = []
-        for word in str(message).lower().split():
-            if word not in stop_words:
-                y.append(word)
-        return " ".join(y)
+        words = str(message).lower().split()
+        return " ".join(word for word in words if word not in stop_words)
 
-    temp['message'] = temp['message'].apply(remove_stop_words)
+    temp['message'] = temp['message'].fillna('').astype(str).apply(remove_stop_words)
 
-    text = temp['message'].astype(str).str.cat(sep=" ").strip()
+    # Join messages without relying on Pandas .str accessor
+    text = " ".join(temp['message'].tolist()).strip()
 
     if not text:
-        return None  # Return None if the text is empty after removing stop words
+        return None
 
     wc = WordCloud(
         width=500,
@@ -70,6 +78,7 @@ def create_wordcloud(selected_user,df):
         min_font_size=10,
         background_color='white'
     )
+
     return wc.generate(text)
 
 def most_common_words(selected_user,df):
@@ -82,7 +91,9 @@ def most_common_words(selected_user,df):
         df = df[df['user'] == selected_user]
 
     temp = df[df['user'] != 'group_notification']
-    temp = temp[temp['message'] != '<Media omitted>\n']
+    temp = temp[
+        temp['message'].astype(str).str.strip() != '<Media omitted>'
+    ].copy()
 
     words = []
 
