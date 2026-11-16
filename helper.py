@@ -18,15 +18,17 @@ def fetch_stats(selected_user,df):
     # fetch the total number of words
     words = []
     for message in df['message']:
-        words.extend(message.split())
+        words.extend(str(message).split())
 
     # fetch number of media messages
-    num_media_messages = df[df['message'] == '<Media omitted>\n'].shape[0]
+    num_media_messages = df[
+        df['message'].astype(str).str.strip().eq('<Media omitted>')
+    ].shape[0]
 
     # fetch number of links shared
     links = []
     for message in df['message']:
-        links.extend(extract.find_urls(message))
+        links.extend(extract.find_urls(str(message)))
 
     return num_messages,len(words),num_media_messages,len(links)
 
@@ -50,15 +52,25 @@ def create_wordcloud(selected_user,df):
 
     def remove_stop_words(message):
         y = []
-        for word in message.lower().split():
+        for word in str(message).lower().split():
             if word not in stop_words:
                 y.append(word)
         return " ".join(y)
 
-    wc = WordCloud(width=500,height=500,min_font_size=10,background_color='white')
     temp['message'] = temp['message'].apply(remove_stop_words)
-    df_wc = wc.generate(temp['message'].str.cat(sep=" "))
-    return df_wc
+
+    text = temp['message'].astype(str).str.cat(sep=" ").strip()
+
+    if not text:
+        return None  # Return None if the text is empty after removing stop words
+
+    wc = WordCloud(
+        width=500,
+        height=500,
+        min_font_size=10,
+        background_color='white'
+    )
+    return wc.generate(text)
 
 def most_common_words(selected_user,df):
 
@@ -75,11 +87,14 @@ def most_common_words(selected_user,df):
     words = []
 
     for message in temp['message']:
-        for word in message.lower().split():
+        for word in str(message).lower().split():
             if word not in stop_words:
                 words.append(word)
 
-    most_common_df = pd.DataFrame(Counter(words).most_common(20))
+    most_common_df = pd.DataFrame(
+        Counter(words).most_common(20),
+        columns=['word', 'frequency']
+    )
     return most_common_df
 
 def emoji_helper(selected_user,df):
@@ -88,7 +103,7 @@ def emoji_helper(selected_user,df):
 
     emojis = []
     for message in df['message']:
-        emojis.extend([c for c in message if emoji.is_emoji(c)])
+        emojis.extend([c for c in str(message) if emoji.is_emoji(c)])
 
     emoji_df = pd.DataFrame(Counter(emojis).most_common(len(Counter(emojis))))
 
@@ -140,6 +155,7 @@ def activity_heatmap(selected_user,df):
     user_heatmap = df.pivot_table(index='day_name', columns='period', values='message', aggfunc='count').fillna(0)
 
     return user_heatmap
+
 
 
 

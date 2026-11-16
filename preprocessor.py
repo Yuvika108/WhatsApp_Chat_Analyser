@@ -15,11 +15,19 @@ def preprocess(data):
     print(df['message_date'].head())
     print(df['message_date'].apply(type).value_counts())
 
-    df['message_date'] = df['message_date'].apply(lambda x: str(x).strip().rstrip('-').strip())
-    try:
-        df['message_date'] = pd.to_datetime(df['message_date'], format='%d/%m/%y, %H:%M')
-    except Exception:
-        df['message_date'] = pd.to_datetime(df['message_date'], format='%d/%m/%Y, %H:%M')
+    df['message_date'] = df['message_date'].astype(str).str.strip()
+
+    df['message_date'] = pd.to_datetime(
+        df['message_date'],
+            format='mixed',
+            dayfirst=True,  # Interpret ambiguous dates as day-first
+            errors='coerce'  # Invalid parsing will result in NaT
+        )
+    if df['message_date'].isnull().any():
+        raise ValueError(
+            "Some msgs date couldn't be parsed."
+            "Please check your WhatsApp export format"
+        )
 
     df.rename(columns={'message_date': 'date'}, inplace=True)
 

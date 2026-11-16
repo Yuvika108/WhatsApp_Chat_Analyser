@@ -207,6 +207,3 @@ Messages without a sender, such as system/group notifications, are handled separ
 ## License
 
 This project currently does not specify a license.
-
-```
-```

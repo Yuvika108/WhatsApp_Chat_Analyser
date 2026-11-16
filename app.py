@@ -1,5 +1,6 @@
-import streamlit as st
+import streamlit as st  # type: ignore
 import preprocessor, helper
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
@@ -209,6 +210,7 @@ with st.sidebar:
         user_list = df['user'].unique().tolist()
         if 'group_notification' in user_list:
             user_list.remove('group_notification')
+        
         user_list.sort()
         user_list.insert(0, "Overall")
 
@@ -227,7 +229,7 @@ if uploaded_file is not None and run:
     st.markdown('<p class="page-title">Chat Analysis</p>', unsafe_allow_html=True)
     st.markdown(
         f'<p class="page-meta">Analysing: <strong>{selected_user}</strong> &nbsp;|&nbsp; '
-        f'{df.shape[0]:,} messages &nbsp;|&nbsp; {df["user"].nunique() - 1} members</p>',
+        f'{df.shape[0]:,} messages &nbsp;|&nbsp; {df[df["user"] != "group_notification"]["user"].nunique()} members</p>',
         unsafe_allow_html=True
     )
     st.divider()
@@ -264,8 +266,9 @@ if uploaded_file is not None and run:
         st.markdown("**Daily Timeline**")
         daily = helper.daily_timeline(selected_user, df)
         fig, ax = plt.subplots(figsize=(6, 3))
-        ax.plot(daily['only_date'], daily['message'], color=TEAL, linewidth=0.9)
-        ax.fill_between(daily['only_date'], daily['message'], alpha=0.07, color=TEAL)
+        dates = pd.to_datetime(daily['only_date'])
+        ax.plot(dates, daily['message'], color=TEAL, linewidth=0.9)
+        ax.fill_between(dates, daily['message'], alpha=0.07, color=TEAL)
         plt.xticks(rotation=45, ha='right', fontsize=6)
         ax.set_ylabel("Messages")
         plt.tight_layout()
@@ -301,9 +304,12 @@ if uploaded_file is not None and run:
         st.markdown("**Hourly Heatmap**")
         user_heatmap = helper.activity_heatmap(selected_user, df)
         fig, ax = plt.subplots(figsize=(4, 3))
-        sns.heatmap(user_heatmap, ax=ax, cmap='Blues',
-                    linewidths=0.4, linecolor='#f8fafc',
-                    cbar_kws={'shrink': 0.8})
+        if user_heatmap.empty:
+            ax.text(0.5, 0.5, "No data", ha='center', va='center', transform=ax.transAxes)
+        else:
+            sns.heatmap(user_heatmap, ax=ax, cmap='Blues',
+                        linewidths=0.4, linecolor='#f8fafc',
+                        cbar_kws={'shrink': 0.8})
         ax.set_xlabel("Hour Range", fontsize=7)
         ax.set_ylabel("Day", fontsize=7)
         plt.tight_layout()
@@ -338,7 +344,10 @@ if uploaded_file is not None and run:
         st.markdown("**Word Cloud**")
         df_wc = helper.create_wordcloud(selected_user, df)
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.imshow(df_wc, interpolation='bilinear')
+        if df_wc is None:
+            ax.text(0.5, 0.5, "No words to display", ha='center', va='center', transform=ax.transAxes)
+        else:
+            ax.imshow(df_wc, interpolation='bilinear')
         ax.axis('off')
         plt.tight_layout()
         st.pyplot(fig); plt.close(fig)
@@ -347,8 +356,10 @@ if uploaded_file is not None and run:
         st.markdown("**Top 20 Words**")
         most_common_df = helper.most_common_words(selected_user, df)
         fig, ax = plt.subplots(figsize=(6, 4))
-        ax.barh(most_common_df[0][::-1], most_common_df[1][::-1], color=TEAL, height=0.6)
+        ax.barh(most_common_df['word'][::-1], most_common_df['frequency'][::-1], color=TEAL, height=0.6)
         ax.set_xlabel("Frequency")
         ax.grid(axis='y', visible=False)
         plt.tight_layout()
         st.pyplot(fig); plt.close(fig)
+
+    
