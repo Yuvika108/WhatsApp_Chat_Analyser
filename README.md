@@ -1,5 +1,9 @@
 # WhatsApp Chat Analyser
 
+```text
+LINK: https://whatsinurchat.streamlit.app/
+```
+
 A Streamlit-based WhatsApp chat analytics dashboard that turns an exported WhatsApp `.txt` chat into useful conversation insights. Upload a chat export, choose a participant or analyse the complete conversation, and explore messaging patterns through useful metrics and visualisations.
 
 ## Features
