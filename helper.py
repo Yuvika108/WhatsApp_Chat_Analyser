@@ -8,7 +8,6 @@ import emoji
 extract = URLExtract()
 
 def fetch_stats(selected_user,df):
-
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
@@ -82,7 +81,6 @@ def create_wordcloud(selected_user, df):
     return wc.generate(text)
 
 def most_common_words(selected_user,df):
-
     _dir = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(_dir, 'stop_hinglish.txt'), 'r') as f:
         stop_words = set(f.read().splitlines())
@@ -121,7 +119,6 @@ def emoji_helper(selected_user,df):
     return emoji_df
 
 def monthly_timeline(selected_user,df):
-
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
@@ -136,7 +133,6 @@ def monthly_timeline(selected_user,df):
     return timeline
 
 def daily_timeline(selected_user,df):
-
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
@@ -145,21 +141,18 @@ def daily_timeline(selected_user,df):
     return daily_timeline
 
 def week_activity_map(selected_user,df):
-
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
     return df['day_name'].value_counts()
 
 def month_activity_map(selected_user,df):
-
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
     return df['month'].value_counts()
 
 def activity_heatmap(selected_user,df):
-
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 

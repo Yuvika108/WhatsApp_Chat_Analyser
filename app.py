@@ -1,6 +1,5 @@
 import streamlit as st  # type: ignore
 import preprocessor, helper
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
@@ -266,9 +265,8 @@ if uploaded_file is not None and run:
         st.markdown("**Daily Timeline**")
         daily = helper.daily_timeline(selected_user, df)
         fig, ax = plt.subplots(figsize=(6, 3))
-        dates = pd.to_datetime(daily['only_date'])
-        ax.plot(dates, daily['message'], color=TEAL, linewidth=0.9)
-        ax.fill_between(dates, daily['message'], alpha=0.07, color=TEAL)
+        ax.plot(daily['only_date'], daily['message'], color=TEAL, linewidth=0.9)
+        ax.fill_between(daily['only_date'], daily['message'], alpha=0.07, color=TEAL)
         plt.xticks(rotation=45, ha='right', fontsize=6)
         ax.set_ylabel("Messages")
         plt.tight_layout()
@@ -304,12 +302,9 @@ if uploaded_file is not None and run:
         st.markdown("**Hourly Heatmap**")
         user_heatmap = helper.activity_heatmap(selected_user, df)
         fig, ax = plt.subplots(figsize=(4, 3))
-        if user_heatmap.empty:
-            ax.text(0.5, 0.5, "No data", ha='center', va='center', transform=ax.transAxes)
-        else:
-            sns.heatmap(user_heatmap, ax=ax, cmap='Blues',
-                        linewidths=0.4, linecolor='#f8fafc',
-                        cbar_kws={'shrink': 0.8})
+        sns.heatmap(user_heatmap, ax=ax, cmap='Blues',
+                    linewidths=0.4, linecolor='#f8fafc',
+                    cbar_kws={'shrink': 0.8})
         ax.set_xlabel("Hour Range", fontsize=7)
         ax.set_ylabel("Day", fontsize=7)
         plt.tight_layout()
@@ -344,10 +339,7 @@ if uploaded_file is not None and run:
         st.markdown("**Word Cloud**")
         df_wc = helper.create_wordcloud(selected_user, df)
         fig, ax = plt.subplots(figsize=(6, 4))
-        if df_wc is None:
-            ax.text(0.5, 0.5, "No words to display", ha='center', va='center', transform=ax.transAxes)
-        else:
-            ax.imshow(df_wc, interpolation='bilinear')
+        ax.imshow(df_wc, interpolation='bilinear')
         ax.axis('off')
         plt.tight_layout()
         st.pyplot(fig); plt.close(fig)
@@ -355,11 +347,34 @@ if uploaded_file is not None and run:
     with c2:
         st.markdown("**Top 20 Words**")
         most_common_df = helper.most_common_words(selected_user, df)
-        fig, ax = plt.subplots(figsize=(6, 4))
-        ax.barh(most_common_df['word'][::-1], most_common_df['frequency'][::-1], color=TEAL, height=0.6)
+        fig, ax = plt.subplots(figsize=(6, 4))        
+        print(most_common_df.columns)
+        print(most_common_df.head())
+        ax.barh(most_common_df['word'][::-1],
+                most_common_df['frequency'][::-1],
+                color=TEAL,
+                height=0.6)
         ax.set_xlabel("Frequency")
         ax.grid(axis='y', visible=False)
         plt.tight_layout()
-        st.pyplot(fig); plt.close(fig)
+        st.pyplot(fig);
+        
+    df_wc = helper.create_wordcloud(selected_user, df)
 
-    
+    if df_wc is not None:
+        fig, ax = plt.subplots()
+        ax.imshow(df_wc)
+        ax.axis("off")
+        st.pyplot(fig)
+    else:
+        st.info("No meaningful words available for word cloud.")
+
+    most_common_df = helper.most_common_words(selected_user, df)
+
+    if not most_common_df.empty:
+        fig, ax = plt.subplots()
+        ax.bar(most_common_df['word'], most_common_df['frequency'])
+        plt.xticks(rotation=90)
+        st.pyplot(fig)
+    else:
+        st.info("No meaningful words available for this user.")
